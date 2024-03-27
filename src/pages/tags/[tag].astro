@@ -2,8 +2,34 @@
 import BlogPost from "@/components/BlogPost.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 
-export async function getStaticPaths() {
-  const allPosts = await Astro.glob("../posts/*.md");
+import type {
+  // InferGetStaticParamsType,
+  // InferGetStaticPropsType,
+  GetStaticPaths,
+} from "astro";
+
+export interface Frontmatter {
+  title: string;
+  tags: string[];
+  author: string;
+  description: string;
+  image: {
+    url: string;
+    alt: string;
+  };
+  pubDate: Date;
+}
+
+type Post = {
+  url: string;
+  frontmatter: Frontmatter;
+};
+
+interface Props {
+  posts: Post[];
+}
+export const getStaticPaths: GetStaticPaths = async () => {
+  const allPosts = await Astro.glob<Frontmatter>("../posts/*.md");
 
   const uniqueTags = [
     ...new Set(allPosts.map((post) => post.frontmatter.tags).flat()),
@@ -18,9 +44,14 @@ export async function getStaticPaths() {
       props: { posts: filteredPosts },
     };
   });
-}
+};
 
-const { tag } = Astro.params;
+// type StaticPathsType = InferGetStaticParamsType<typeof getStaticPaths>;
+// type StaticPropsType = InferGetStaticPropsType<typeof getStaticPaths>;
+
+type StaticPathsType = { tag: string };
+
+const { tag } = Astro.params as StaticPathsType;
 const { posts } = Astro.props;
 ---
 
@@ -28,7 +59,7 @@ const { posts } = Astro.props;
   <p>Posts tagged with {tag}</p>
   <ul>
     {
-      posts.map((post) => (
+      posts?.map((post) => (
         <BlogPost url={post.url} title={post.frontmatter.title} />
       ))
     }
